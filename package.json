@@ -1,0 +1,20 @@
+{
+  "name": "multi-agent-trip-planner",
+  "version": "1.0.0",
+  "description": "Supervisor-pattern multi-agent trip planner. One Orchestrator delegates to six specialist sub-agents (Flight, Hotel, Itinerary, Food, Attractions, Budget) over a shared TripContext.",
+  "type": "module",
+  "bin": {
+    "trip-planner": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "demo": "node src/cli.js --demo",
+    "server": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0"
+  }
+}
