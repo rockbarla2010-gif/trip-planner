@@ -1,0 +1,13 @@
+# Treat binary assets as binary (no line-ending conversion).
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+
+# Keep source/text files with normalized LF in the repo.
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.svg text eol=lf
