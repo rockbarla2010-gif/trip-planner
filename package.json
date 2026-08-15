@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Supervisor-pattern multi-agent trip planner. One Orchestrator delegates to six specialist sub-agents (Flight, Hotel, Itinerary, Food, Attractions, Budget) over a shared TripContext.",
   "type": "module",
+  "license": "MIT",
   "bin": {
     "trip-planner": "src/cli.js"
   },
