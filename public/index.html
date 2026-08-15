@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multi-Agent Trip Planner</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --ink:#1f2328; --muted:#57606a; --line:#e3e8ef;
+    --brand:#1f6feb; --brand2:#7c3aed; --good:#1a7f37; --warn:#b3541e; --chip:#eef2f7;
+    --shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(20,30,60,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0d1117;--card:#161b22;--ink:#e6edf3;--muted:#9198a1;--line:#2a3038;
+      --brand:#4c8dff;--brand2:#a371f7;--good:#3fb950;--warn:#e3873c;--chip:#20262e;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 18px 60px}
+  header.hero{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;
+    border-radius:18px;padding:28px 26px;box-shadow:var(--shadow)}
+  header.hero h1{margin:0 0 6px;font-size:26px;letter-spacing:-.2px}
+  header.hero p{margin:0;opacity:.92;font-size:14px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);padding:20px;margin-top:18px}
+  form .row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 6px;text-transform:uppercase;letter-spacing:.03em}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+    background:var(--bg);color:var(--ink);font-size:15px}
+  input:focus,select:focus{outline:2px solid var(--brand);border-color:transparent}
+  details{margin-top:14px}
+  details summary{cursor:pointer;font-size:13px;color:var(--brand);font-weight:600;user-select:none}
+  details .row{grid-template-columns:repeat(4,1fr);margin-top:12px}
+  .actions{display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap}
+  button{appearance:none;border:0;border-radius:11px;padding:12px 22px;font-size:15px;font-weight:700;
+    color:#fff;background:linear-gradient(120deg,var(--brand),var(--brand2));cursor:pointer;box-shadow:var(--shadow)}
+  button:disabled{opacity:.6;cursor:progress}
+  .hint{font-size:13px;color:var(--muted)}
+  /* results */
+  #out{margin-top:8px}
+  .status{font-size:14px;color:var(--muted);padding:10px 2px}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--line);
+    border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px;margin-right:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .triphead h2{margin:0 0 2px;font-size:22px}
+  .triphead .sub{color:var(--muted);font-size:14px}
+  .sources{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px}
+  .chip{font-size:12px;background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
+  .chip.live{color:var(--good);border-color:var(--good)}
+  h3.sec{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:22px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .opt{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .opt:last-child{border-bottom:0}
+  .opt .price{font-weight:700;white-space:nowrap}
+  .warn{color:var(--warn);font-size:12px}
+  .hotel{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+  .hotel .name{font-weight:700;font-size:16px}
+  .days{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+  .day{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .day .dtitle{font-weight:700;margin-bottom:8px}
+  .day .slot{font-size:13px;margin:5px 0}
+  .day .slot b{color:var(--muted);font-weight:600}
+  .day .dining{margin-top:8px;font-size:13px;border-top:1px dashed var(--line);padding-top:8px}
+  table.budget{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+  table.budget th,table.budget td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+  table.budget td.num{text-align:right;font-variant-numeric:tabular-nums}
+  table.budget tr.total td{font-weight:700;border-top:2px solid var(--line)}
+  .bar{height:8px;border-radius:6px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .verdict{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:14px}
+  .verdict.good{background:color-mix(in srgb,var(--good) 12%,transparent);color:var(--good)}
+  .verdict.over{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn)}
+  .err{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);padding:12px 14px;border-radius:10px}
+  footer{margin-top:26px;text-align:center;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <h1>✈️ Multi-Agent Trip Planner</h1>
+    <p>Type a destination and dates — six specialist agents plan flights, a hotel near the sights, a day-by-day itinerary, dining, and a budget.</p>
+  </header>
+
+  <form id="form" class="panel">
+    <div class="row">
+      <div>
+        <label for="destination">Destination *</label>
+        <input id="destination" name="destination" placeholder="e.g. Paris" value="Paris" required>
+      </div>
+      <div>
+        <label for="start_date">Start date *</label>
+        <input id="start_date" name="start_date" type="date" required>
+      </div>
+      <div>
+        <label for="end_date">End date *</label>
+        <input id="end_date" name="end_date" type="date" required>
+      </div>
+    </div>
+
+    <details>
+      <summary>More options (all optional — agents fill in the rest)</summary>
+      <div class="row">
+        <div>
+          <label for="origin">From</label>
+          <input id="origin" name="origin" placeholder="e.g. London" value="London">
+        </div>
+        <div>
+          <label for="traveler_count">Travelers</label>
+          <input id="traveler_count" name="traveler_count" type="number" min="1" value="2">
+        </div>
+        <div>
+          <label for="budget_total">Budget (total)</label>
+          <input id="budget_total" name="budget_total" type="number" min="0" value="3000">
+        </div>
+        <div>
+          <label for="pace">Pace</label>
+          <select id="pace" name="pace">
+            <option value="relaxed">Relaxed</option>
+            <option value="moderate" selected>Moderate</option>
+            <option value="packed">Packed</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="grid-template-columns:1fr 1fr;margin-top:12px">
+        <div>
+          <label for="interests">Interests</label>
+          <input id="interests" name="interests" placeholder="Art, Food, History" value="Art, Food">
+        </div>
+        <div>
+          <label for="dietary_restrictions">Dietary</label>
+          <input id="dietary_restrictions" name="dietary_restrictions" placeholder="vegan, gluten-free">
+        </div>
+      </div>
+    </details>
+
+    <div class="actions">
+      <button id="go" type="submit">Plan my trip</button>
+      <span class="hint">Uses live APIs when keys are set, otherwise realistic demo data.</span>
+    </div>
+  </form>
+
+  <div id="out"></div>
+
+  <footer>Supervisor-pattern multi-agent system · flights/hotels/attractions via Amadeus · restaurants via Google Places</footer>
+</div>
+
+<script>
+// default dates: ~30 days out, 4-night trip
+(function seedDates(){
+  const s=new Date(Date.now()+30*864e5), e=new Date(s.getTime()+4*864e5);
+  const fmt=d=>d.toISOString().slice(0,10);
+  const sd=document.getElementById('start_date'), ed=document.getElementById('end_date');
+  if(!sd.value) sd.value=fmt(s);
+  if(!ed.value) ed.value=fmt(e);
+})();
+
+const out=document.getElementById('out'), btn=document.getElementById('go');
+const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const nights=(a,b)=>{const d=(Date.parse(b)-Date.parse(a))/864e5;return d>0?Math.round(d):0;};
+const srcChip=ds=>{const live=ds==='amadeus'||ds==='google';
+  const label=ds==='amadeus'?'live · Amadeus':ds==='google'?'live · Google':ds==='stub-fallback'?'estimated (API error)':'estimated';
+  return `<span class="chip ${live?'live':''}">${label}</span>`;};
+
+document.getElementById('form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body=Object.fromEntries(new FormData(e.target).entries());
+  btn.disabled=true;
+  out.innerHTML='<div class="panel"><div class="status"><span class="spinner"></span>Six agents are working: attractions → hotel → itinerary → food → flights → budget…</div></div>';
+  try{
+    const r=await fetch('/plan',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json();
+    if(!r.ok){throw new Error((j.problems&&j.problems.join(', '))||j.error||'Request failed');}
+    render(j.context);
+  }catch(err){
+    out.innerHTML='<div class="panel"><div class="err">⚠ '+esc(err.message)+'</div></div>';
+  }finally{ btn.disabled=false; }
+});
+
+function render(ctx){
+  const o=ctx.sub_agent_outputs||{};
+  const n=nights(ctx.start_date,ctx.end_date);
+  let h='<div class="panel">';
+
+  // header
+  h+='<div class="triphead"><h2>'+esc(ctx.destination)+'</h2><div class="sub">'+
+     (ctx.origin?esc(ctx.origin)+' → ':'')+esc(ctx.destination)+' · '+esc(ctx.start_date)+' to '+esc(ctx.end_date)+
+     ' · '+esc(ctx.traveler_count)+' traveler(s) · '+n+' nights</div></div>';
+  h+='<div class="sources">Data: '+srcChip(o.flights&&o.flights.data_source)+srcChip(o.hotels&&o.hotels.data_source)+
+     srcChip(o.attractions&&o.attractions.data_source)+srcChip(o.food&&o.food.data_source)+'</div>';
+
+  // flights
+  if(o.flights&&o.flights.options&&o.flights.options.length){
+    h+='<h3 class="sec">✈️ Flights</h3>';
+    o.flights.options.slice(0,3).forEach(f=>{
+      h+='<div class="opt"><div>'+esc(f.airline)+' · '+esc(f.total_travel_time)+
+         (f.transit_warnings&&f.transit_warnings.length?'<div class="warn">⚠ '+esc(f.transit_warnings.join(' '))+'</div>':'')+
+         '</div><div class="price">$'+esc(f.price_per_person)+'/pp'+(f.price_total?' · $'+esc(f.price_total)+' total':'')+'</div></div>';
+    });
+  }
+
+  // hotel
+  if(o.hotels&&o.hotels.options&&o.hotels.options.length){
+    const r=o.hotels.options[o.hotels.recommended_index||0];
+    h+='<h3 class="sec">🏨 Hotel (recommended)</h3><div class="hotel"><div><span class="name">'+esc(r.name)+
+       '</span><div class="sub">'+esc(r.area)+(r.distance_to_clusters_km!=null?' · '+esc(r.distance_to_clusters_km)+'km to activities':'')+
+       (r.rating!=null?' · ★'+esc(r.rating):'')+'</div></div><div class="price">$'+esc(r.price_per_night)+'/night</div></div>';
+  }
+
+  // itinerary + dining
+  if(o.itinerary&&o.itinerary.days&&o.itinerary.days.length){
+    const food=(o.food&&o.food.by_day)||[];
+    h+='<h3 class="sec">🗺️ Day-by-day</h3><div class="days">';
+    o.itinerary.days.forEach(d=>{
+      const fd=food.find(x=>x.day===d.day);
+      h+='<div class="day"><div class="dtitle">Day '+esc(d.day)+' — '+esc(d.cluster)+'</div>'+
+         '<div class="slot"><b>Morning:</b> '+esc(d.morning)+'</div>'+
+         '<div class="slot"><b>Afternoon:</b> '+esc(d.afternoon)+'</div>'+
+         '<div class="slot"><b>Evening:</b> '+esc(d.evening)+'</div>';
+      if(fd&&fd.options&&fd.options.length){
+        h+='<div class="dining">🍽 '+fd.options.map(rr=>esc(rr.name)+' ('+esc(rr.cuisine)+', '+esc(rr.price_range)+')'+
+           (rr.dietary_conflict&&rr.dietary_conflict.length?' <span class="warn">⚠</span>':'')).join('<br>')+'</div>';
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  // budget
+  if(o.budget){
+    const b=o.budget, cur=b.currency||'USD';
+    h+='<h3 class="sec">💰 Budget</h3><table class="budget"><thead><tr><th>Category</th><th class="num">Est. cost ('+esc(cur)+')</th><th class="num">%</th><th style="width:30%"></th></tr></thead><tbody>';
+    (b.breakdown||[]).forEach(row=>{
+      h+='<tr><td>'+esc(row.category)+'</td><td class="num">'+esc(row.estimated_cost)+'</td><td class="num">'+esc(row.pct_of_total)+
+         '%</td><td><div class="bar" style="width:'+Math.min(100,row.pct_of_total)+'%"></div></td></tr>';
+    });
+    h+='<tr class="total"><td>Group total</td><td class="num">'+esc(b.group_total)+'</td><td class="num">100%</td><td></td></tr>';
+    h+='</tbody></table>';
+    h+='<div class="sub" style="margin-top:8px">Per traveler ≈ $'+esc(b.per_traveler_total)+' '+esc(cur)+
+       ' · Budget ceiling: '+(b.budget_total!=null?'$'+esc(b.budget_total):'not set')+'</div>';
+    if(b.over_budget){
+      h+='<div class="verdict over">⚠ Over budget by '+esc(b.overage_pct)+'%. Largest driver: '+esc(b.largest_category)+
+         '.'+(b.trade_off?' '+esc(b.trade_off):'')+'</div>';
+    }else if(b.budget_total!=null){
+      h+='<div class="verdict good">✅ Within budget.</div>';
+    }
+  }
+
+  h+='</div>';
+  out.innerHTML=h;
+  out.scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>

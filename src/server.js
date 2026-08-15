@@ -5,8 +5,13 @@
 // Uses the LLM orchestrator when ANTHROPIC_API_KEY is set, else the demo pipeline.
 
 import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadDotEnv } from "./env.js";
 loadDotEnv();
+
+const PUBLIC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "public");
 
 import { createTripContext, validateForPlanning } from "./tripContext.js";
 import { createRunLogger } from "./logger.js";
@@ -66,9 +71,14 @@ function contextFromBody(b) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.method === "GET" && req.url === "/") {
+  if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
+    const file = path.join(PUBLIC_DIR, "index.html");
+    if (fs.existsSync(file)) {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      return res.end(fs.readFileSync(file));
+    }
     res.writeHead(200, { "content-type": "text/html" });
-    return res.end(FORM);
+    return res.end(FORM); // fallback to the minimal inline form
   }
   if (req.method === "POST" && req.url === "/plan") {
     let body = "";
