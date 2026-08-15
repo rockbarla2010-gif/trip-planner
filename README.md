@@ -1,5 +1,7 @@
 # Multi-Agent Trip Planner
 
+![Multi-Agent Trip Planner — CLI demo](docs/screenshot.svg)
+
 A supervisor-pattern multi-agent system. One **Orchestrator** owns the
 conversation and a single shared **TripContext** JSON object, and delegates to
 six specialist **sub-agents** — Flight, Hotel, Itinerary, Food, Attractions,
